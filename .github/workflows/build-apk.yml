@@ -1,0 +1,41 @@
+name: Build Billi Billi APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.0'
+          channel: stable
+
+      - name: Create Flutter project
+        run: |
+          flutter create --platforms=android billi_billi_build
+          cp main.dart billi_billi_build/lib/main.dart
+          cp pubspec.yaml billi_billi_build/pubspec.yaml
+
+      - name: Get dependencies
+        working-directory: billi_billi_build
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: billi_billi_build
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Billi-Billi-APK
+          path: billi_billi_build/build/app/outputs/flutter-apk/app-release.apk
