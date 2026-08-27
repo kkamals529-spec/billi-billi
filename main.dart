@@ -18,26 +18,20 @@ class BilliBilliApp extends StatelessWidget {
       title: 'Billi Billi',
       theme: ThemeData(
         brightness: Brightness.dark,
-        colorSchemeSeed: Colors.red,
         useMaterial3: true,
+        colorSchemeSeed: Colors.red,
       ),
       home: const HomePage(),
     );
   }
 }
 
-class BilliVideo {
-  final String title;
-  final String creator;
-  final String path;
-  int likes;
+class VideoItem {
+  final File file;
   bool liked;
 
-  BilliVideo({
-    required this.title,
-    required this.creator,
-    required this.path,
-    this.likes = 0,
+  VideoItem({
+    required this.file,
     this.liked = false,
   });
 }
@@ -52,48 +46,44 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ImagePicker _picker = ImagePicker();
 
-  final List<BilliVideo> videos = [];
+  final List<VideoItem> _videos = [];
 
-  int currentTab = 0;
+  int _selectedIndex = 0;
 
-  Future<void> pickVideo(ImageSource source) async {
-    try {
-      final XFile? file = await _picker.pickVideo(
-        source: source,
-        maxDuration: const Duration(minutes: 5),
+  Future<void> _pickVideo() async {
+    final XFile? picked = await _picker.pickVideo(
+      source: ImageSource.gallery,
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      _videos.insert(
+        0,
+        VideoItem(file: File(picked.path)),
       );
-
-      if (file == null) return;
-
-      setState(() {
-        videos.insert(
-          0,
-          BilliVideo(
-            title: 'मेरा नया वीडियो',
-            creator: 'Billi Creator',
-            path: file.path,
-          ),
-        );
-        currentTab = 0;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('वीडियो Billi Billi में जोड़ दिया गया ✅'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('वीडियो चुनने में समस्या: $e')),
-        );
-      }
-    }
+      _selectedIndex = 0;
+    });
   }
 
-  void showUploadOptions() {
+  Future<void> _recordVideo() async {
+    final XFile? recorded = await _picker.pickVideo(
+      source: ImageSource.camera,
+      maxDuration: const Duration(minutes: 5),
+    );
+
+    if (recorded == null) return;
+
+    setState(() {
+      _videos.insert(
+        0,
+        VideoItem(file: File(recorded.path)),
+      );
+      _selectedIndex = 0;
+    });
+  }
+
+  void _showUploadOptions() {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -105,7 +95,7 @@ class _HomePageState extends State<HomePage> {
                 title: const Text('Gallery से वीडियो चुनें'),
                 onTap: () {
                   Navigator.pop(context);
-                  pickVideo(ImageSource.gallery);
+                  _pickVideo();
                 },
               ),
               ListTile(
@@ -113,7 +103,7 @@ class _HomePageState extends State<HomePage> {
                 title: const Text('Camera से वीडियो रिकॉर्ड करें'),
                 onTap: () {
                   Navigator.pop(context);
-                  pickVideo(ImageSource.camera);
+                  _recordVideo();
                 },
               ),
             ],
@@ -123,65 +113,44 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void showSearch() {
-    showSearch(
-      context: context,
-      delegate: BilliSearchDelegate(videos),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      ShortsPage(videos: videos),
-      const Center(child: Text('🔥 लोकप्रिय वीडियो')),
-      const Center(child: Text('👥 सब्सक्राइब किए गए')),
-      ProfilePage(onUpload: showUploadOptions),
-    ];
-
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Row(
-          children: [
-            Text('🐱 ', style: TextStyle(fontSize: 24)),
-            Text(
-              'Billi ',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'Billi',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+        backgroundColor: Colors.black,
+        title: const Text(
+          'Billi Billi',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
-            onPressed: showSearch,
             icon: const Icon(Icons.search),
-          ),
-          IconButton(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('कोई नई notification नहीं है')),
+              showSearch(
+                context: context,
+                delegate: BilliSearchDelegate(_videos),
               );
             },
-            icon: const Icon(Icons.notifications_none),
           ),
         ],
       ),
-      body: pages[currentTab],
-      floatingActionButton: FloatingActionButton(
-        onPressed: showUploadOptions,
-        child: const Icon(Icons.add),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          _homeScreen(),
+          _shortsScreen(),
+          _profileScreen(),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: currentTab,
+        backgroundColor: Colors.black,
+        selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
           setState(() {
-            currentTab = index;
+            _selectedIndex = index;
           });
         },
         destinations: const [
@@ -191,14 +160,9 @@ class _HomePageState extends State<HomePage> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.local_fire_department_outlined),
-            selectedIcon: Icon(Icons.local_fire_department),
+            icon: Icon(Icons.play_circle_outline),
+            selectedIcon: Icon(Icons.play_circle),
             label: 'Shorts',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: 'Subs',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
@@ -207,70 +171,154 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.red,
+        onPressed: _showUploadOptions,
+        child: const Icon(Icons.add),
+      ),
     );
   }
-}
 
-class ShortsPage extends StatefulWidget {
-  final List<BilliVideo> videos;
+  Widget _homeScreen() {
+    if (_videos.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.video_collection,
+                size: 80,
+                color: Colors.white54,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Billi Billi में आपका स्वागत है',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'अपना पहला वीडियो Gallery या Camera से जोड़ें।',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 25),
+              ElevatedButton.icon(
+                onPressed: _showUploadOptions,
+                icon: const Icon(Icons.video_call),
+                label: const Text('वीडियो जोड़ें'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
-  const ShortsPage({
-    super.key,
-    required this.videos,
-  });
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 90),
+      itemCount: _videos.length,
+      itemBuilder: (context, index) {
+        return VideoCard(
+          item: _videos[index],
+          onLike: () {
+            setState(() {
+              _videos[index].liked = !_videos[index].liked;
+            });
+          },
+        );
+      },
+    );
+  }
 
-  @override
-  State<ShortsPage> createState() => _ShortsPageState();
-}
-
-class _ShortsPageState extends State<ShortsPage> {
-  final PageController controller = PageController();
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.videos.isEmpty) {
+  Widget _shortsScreen() {
+    if (_videos.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              '🎬',
-              style: TextStyle(fontSize: 70),
+            const Icon(
+              Icons.play_circle_outline,
+              size: 80,
+              color: Colors.white54,
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 20),
             const Text(
-              'अभी कोई वीडियो नहीं है',
+              'अभी कोई Short नहीं है',
               style: TextStyle(fontSize: 20),
             ),
-            const SizedBox(height: 10),
-            const Text('नीचे + दबाकर अपना वीडियो जोड़ें'),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _showUploadOptions,
+              icon: const Icon(Icons.add),
+              label: const Text('पहला वीडियो डालें'),
+            ),
           ],
         ),
       );
     }
 
     return PageView.builder(
-      controller: controller,
       scrollDirection: Axis.vertical,
-      itemCount: widget.videos.length,
+      itemCount: _videos.length,
       itemBuilder: (context, index) {
-        return VideoCard(
-          video: widget.videos[index],
-          onChanged: () => setState(() {}),
+        return ShortVideo(
+          item: _videos[index],
+          onLike: () {
+            setState(() {
+              _videos[index].liked = !_videos[index].liked;
+            });
+          },
         );
       },
+    );
+  }
+
+  Widget _profileScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircleAvatar(
+            radius: 45,
+            child: Icon(
+              Icons.person,
+              size: 50,
+            ),
+          ),
+          const SizedBox(height: 15),
+          const Text(
+            'Billi Billi User',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${_videos.length} वीडियो',
+            style: const TextStyle(
+              color: Colors.white70,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class VideoCard extends StatefulWidget {
-  final BilliVideo video;
-  final VoidCallback onChanged;
+  final VideoItem item;
+  final VoidCallback onLike;
 
   const VideoCard({
     super.key,
-    required this.video,
-    required this.onChanged,
+    required this.item,
+    required this.onLike,
   });
 
   @override
@@ -278,248 +326,279 @@ class VideoCard extends StatefulWidget {
 }
 
 class _VideoCardState extends State<VideoCard> {
-  late VideoPlayerController controller;
-  bool ready = false;
+  late VideoPlayerController _controller;
+  bool _ready = false;
 
   @override
   void initState() {
     super.initState();
 
-    controller = VideoPlayerController.file(
-      File(widget.video.path),
-    )
+    _controller = VideoPlayerController.file(widget.item.file)
       ..initialize().then((_) {
-        if (!mounted) return;
-
-        setState(() {
-          ready = true;
-        });
-
-        controller
-          ..setLooping(true)
-          ..play();
+        if (mounted) {
+          setState(() {
+            _ready = true;
+          });
+        }
       });
   }
 
   @override
   void dispose() {
-    controller.dispose();
+    _controller.dispose();
     super.dispose();
-  }
-
-  void toggleLike() {
-    setState(() {
-      widget.video.liked = !widget.video.liked;
-
-      if (widget.video.liked) {
-        widget.video.likes++;
-      } else if (widget.video.likes > 0) {
-        widget.video.likes--;
-      }
-    });
-
-    widget.onChanged();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      child: Stack(
-        fit: StackFit.expand,
+    return Card(
+      color: const Color(0xFF151515),
+      margin: const EdgeInsets.only(bottom: 10),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
         children: [
-          if (ready)
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (controller.value.isPlaying) {
-                    controller.pause();
-                  } else {
-                    controller.play();
-                  }
-                });
-              },
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: controller.value.aspectRatio,
-                  child: VideoPlayer(controller),
-                ),
+          if (_ready)
+            AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  VideoPlayer(_controller),
+                  IconButton(
+                    iconSize: 55,
+                    color: Colors.white,
+                    onPressed: () {
+                      setState(() {
+                        if (_controller.value.isPlaying) {
+                          _controller.pause();
+                        } else {
+                          _controller.play();
+                        }
+                      });
+                    },
+                    icon: Icon(
+                      _controller.value.isPlaying
+                          ? Icons.pause_circle
+                          : Icons.play_circle,
+                    ),
+                  ),
+                ],
               ),
             )
           else
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
-
-          Positioned(
-            right: 12,
-            bottom: 100,
-            child: Column(
-              children: [
-                IconButton(
-                  onPressed: toggleLike,
-                  iconSize: 42,
-                  color: widget.video.liked
-                      ? Colors.red
-                      : Colors.white,
-                  icon: Icon(
-                    widget.video.liked
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                  ),
-                ),
-                Text(
-                  '${widget.video.likes}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                IconButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Comment feature जल्द आएगा'),
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.comment,
-                    size: 35,
-                  ),
-                ),
-                const Text('Comment'),
-                const SizedBox(height: 18),
-                IconButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Share feature जल्द आएगा'),
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.share,
-                    size: 35,
-                  ),
-                ),
-                const Text('Share'),
-              ],
-            ),
-          ),
-
-          Positioned(
-            left: 15,
-            right: 80,
-            bottom: 25,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '@${widget.video.creator}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.video.title,
-                  style: const TextStyle(fontSize: 17),
-                ),
-              ],
-            ),
-          ),
-
-          if (ready)
-            Positioned(
-              left: 10,
-              right: 10,
-              bottom: 0,
-              child: VideoProgressIndicator(
-                controller,
-                allowScrubbing: true,
+            const AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Center(
+                child: CircularProgressIndicator(),
               ),
             ),
+          VideoProgressIndicator(
+            _controller,
+            allowScrubbing: true,
+            padding: EdgeInsets.zero,
+          ),
+          Row(
+            children: [
+              IconButton(
+                onPressed: widget.onLike,
+                icon: Icon(
+                  widget.item.liked
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                  color: widget.item.liked ? Colors.red : Colors.white,
+                ),
+              ),
+              const Text('Like'),
+              const Spacer(),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.share),
+              ),
+              const Text('Share'),
+              const SizedBox(width: 10),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-class ProfilePage extends StatelessWidget {
-  final VoidCallback onUpload;
+class ShortVideo extends StatefulWidget {
+  final VideoItem item;
+  final VoidCallback onLike;
 
-  const ProfilePage({
+  const ShortVideo({
     super.key,
-    required this.onUpload,
+    required this.item,
+    required this.onLike,
   });
 
   @override
+  State<ShortVideo> createState() => _ShortVideoState();
+}
+
+class _ShortVideoState extends State<ShortVideo> {
+  late VideoPlayerController _controller;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = VideoPlayerController.file(widget.item.file)
+      ..initialize().then((_) {
+        if (mounted) {
+          setState(() {
+            _ready = true;
+          });
+          _controller
+            ..setLooping(true)
+            ..play();
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _togglePlay() {
+    setState(() {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+      } else {
+        _controller.play();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        const Center(
-          child: CircleAvatar(
-            radius: 50,
-            child: Text(
-              '🐱',
-              style: TextStyle(fontSize: 45),
-            ),
-          ),
-        ),
-        const SizedBox(height: 15),
-        const Center(
-          child: Text(
-            'Billi Billi Creator',
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        const SizedBox(height: 5),
-        const Center(
-          child: Text('@billi_creator • 12.5K followers'),
-        ),
-        const SizedBox(height: 25),
-        FilledButton.icon(
-          onPressed: onUpload,
-          icon: const Icon(Icons.upload),
-          label: const Text('Upload Video'),
-        ),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Settings'),
+        Container(color: Colors.black),
+        if (_ready)
+          GestureDetector(
+            onTap: _togglePlay,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _controller.value.size.width,
+                  height: _controller.value.size.height,
+                  child: VideoPlayer(_controller),
+                ),
               ),
-            );
-          },
-          icon: const Icon(Icons.settings),
-          label: const Text('Settings'),
+            ),
+          )
+        else
+          const Center(
+            child: CircularProgressIndicator(),
+          ),
+        Positioned(
+          right: 12,
+          bottom: 100,
+          child: Column(
+            children: [
+              IconButton(
+                iconSize: 38,
+                onPressed: widget.onLike,
+                icon: Icon(
+                  widget.item.liked
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                  color: widget.item.liked
+                      ? Colors.red
+                      : Colors.white,
+                ),
+              ),
+              const Text(
+                'Like',
+                style: TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 15),
+              IconButton(
+                iconSize: 35,
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.comment,
+                  color: Colors.white,
+                ),
+              ),
+              const Text(
+                'Comment',
+                style: TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 15),
+              IconButton(
+                iconSize: 35,
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.share,
+                  color: Colors.white,
+                ),
+              ),
+              const Text(
+                'Share',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          left: 15,
+          right: 90,
+          bottom: 25,
+          child: Row(
+            children: [
+              const CircleAvatar(
+                child: Icon(Icons.person),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  '@BilliBilli',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: _togglePlay,
+                icon: Icon(
+                  _controller.value.isPlaying
+                      ? Icons.pause
+                      : Icons.play_arrow,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 }
 
-class BilliSearchDelegate extends SearchDelegate<BilliVideo?> {
-  final List<BilliVideo> videos;
+class BilliSearchDelegate extends SearchDelegate<String> {
+  final List<VideoItem> videos;
 
   BilliSearchDelegate(this.videos);
 
   @override
   List<Widget>? buildActions(BuildContext context) {
     return [
-      IconButton(
-        onPressed: () {
-          query = '';
-        },
-        icon: const Icon(Icons.clear),
-      ),
+      if (query.isNotEmpty)
+        IconButton(
+          onPressed: () {
+            query = '';
+          },
+          icon: const Icon(Icons.clear),
+        ),
     ];
   }
 
@@ -527,7 +606,7 @@ class BilliSearchDelegate extends SearchDelegate<BilliVideo?> {
   Widget? buildLeading(BuildContext context) {
     return IconButton(
       onPressed: () {
-        close(context, null);
+        close(context, '');
       },
       icon: const Icon(Icons.arrow_back),
     );
@@ -535,41 +614,34 @@ class BilliSearchDelegate extends SearchDelegate<BilliVideo?> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return buildList(context);
+    return _results();
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return buildList(context);
+    return _results();
   }
 
-  Widget buildList(BuildContext context) {
-    final results = videos.where((video) {
-      final q = query.toLowerCase();
-
-      return video.title.toLowerCase().contains(q) ||
-          video.creator.toLowerCase().contains(q);
-    }).toList();
-
-    if (results.isEmpty) {
+  Widget _results() {
+    if (videos.isEmpty) {
       return const Center(
         child: Text('कोई वीडियो नहीं मिला'),
       );
     }
 
     return ListView.builder(
-      itemCount: results.length,
+      itemCount: videos.length,
       itemBuilder: (context, index) {
-        final video = results[index];
-
         return ListTile(
-          leading: const CircleAvatar(
-            child: Icon(Icons.play_arrow),
+          leading: const Icon(Icons.video_library),
+          title: Text(
+            'Billi Billi Video ${index + 1}',
           ),
-          title: Text(video.title),
-          subtitle: Text(video.creator),
+          subtitle: const Text(
+            'वीडियो खोलने के लिए टैप करें',
+          ),
           onTap: () {
-            close(context, video);
+            close(context, '');
           },
         );
       },
