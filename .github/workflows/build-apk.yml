@@ -22,15 +22,13 @@ jobs:
 
       - name: Create Flutter project
         run: |
-          flutter create --platforms=android billi_billi_build
+          flutter create --platforms=android --org com.billibilli.video billi_billi_build
           cp main.dart billi_billi_build/lib/main.dart
           cp pubspec.yaml billi_billi_build/pubspec.yaml
 
-          
-
       - name: Get dependencies
         working-directory: billi_billi_build
-        run:
+        run: flutter pub get
 
       - name: Build APK
         working-directory: billi_billi_build
