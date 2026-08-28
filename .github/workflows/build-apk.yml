@@ -29,8 +29,22 @@ jobs:
       - name: Configure Kotlin
         working-directory: billi_billi_build
         run: |
-          sed -i -E 's/(id "org\.jetbrains\.kotlin\.android" version ")[^"]+/\12.3.20/' android/settings.gradle
-          sed -i -E 's/(id\("org\.jetbrains\.kotlin\.android"\) version ")[^"]+/\12.3.20/' android/settings.gradle.kts
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/settings.gradle")
+          text = p.read_text()
+
+          import re
+          text = re.sub(
+              r'(id\s+"org\.jetbrains\.kotlin\.android"\s+version\s+")[^"]+(")',
+              r'\g<1>2.3.0\g<2>',
+              text
+          )
+
+          p.write_text(text)
+          print("Kotlin Gradle plugin set to 2.3.0")
+          PY
 
       - name: Get dependencies
         working-directory: billi_billi_build
