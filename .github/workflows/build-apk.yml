@@ -22,29 +22,14 @@ jobs:
 
       - name: Create Flutter project
         run: |
-          flutter create --platforms=android --org com.billibilli.video billi_billi_build
+          flutter create --platforms=android billi_billi_build
           cp main.dart billi_billi_build/lib/main.dart
           cp pubspec.yaml billi_billi_build/pubspec.yaml
 
       - name: Configure Kotlin
         working-directory: billi_billi_build
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          p = Path("android/settings.gradle")
-          text = p.read_text()
-
-          import re
-          text = re.sub(
-              r'(id\s+"org\.jetbrains\.kotlin\.android"\s+version\s+")[^"]+(")',
-              r'\g<1>2.3.0\g<2>',
-              text
-          )
-
-          p.write_text(text)
-          print("Kotlin Gradle plugin set to 2.3.0")
-          PY
+          sed -i 's/id("org.jetbrains.kotlin.android") version "[^"]*"/id("org.jetbrains.kotlin.android") version "2.3.0"/' android/settings.gradle.kts
 
       - name: Get dependencies
         working-directory: billi_billi_build
