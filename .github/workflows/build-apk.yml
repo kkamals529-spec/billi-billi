@@ -26,11 +26,6 @@ jobs:
           cp main.dart billi_billi_build/lib/main.dart
           cp pubspec.yaml billi_billi_build/pubspec.yaml
 
-      - name: Fix Kotlin version
-        working-directory: billi_billi_build
-        run: |
-          sed -i -E 's/(id "org\.jetbrains\.kotlin\.android" version ")[^"]+/\12.1.0/' android/settings.gradle
-
       - name: Get dependencies
         working-directory: billi_billi_build
         run: flutter pub get
