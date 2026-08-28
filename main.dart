@@ -24,7 +24,6 @@ class BilliBilliApp extends StatelessWidget {
   }
 }
 
-// ==================== BOTTOM NAVIGATION ====================
 class BottomNavScreen extends StatefulWidget {
   const BottomNavScreen({super.key});
 
@@ -38,8 +37,8 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const ReelsScreen(),
-    const Center(child: Text('अपलोड स्क्रीन\n(जल्द आ रहा है)', textAlign: TextAlign.center, style: TextStyle(fontSize: 22))),
-    const Center(child: Text('एक्सप्लोर\n(जल्द आ रहा है)', textAlign: TextAlign.center, style: TextStyle(fontSize: 22))),
+    const Center(child: Text('अपलोड स्क्रीन', style: TextStyle(fontSize: 22))),
+    const Center(child: Text('एक्सप्लोर', style: TextStyle(fontSize: 22))),
     const ProfileScreen(),
   ];
 
@@ -64,7 +63,6 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   }
 }
 
-// ==================== HOME SCREEN ====================
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -80,7 +78,6 @@ class HomeScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          // Stories
           SizedBox(
             height: 110,
             child: ListView.builder(
@@ -96,7 +93,6 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
-          // Posts
           ...List.generate(6, (index) => PostCard(index: index)),
         ],
       ),
@@ -104,7 +100,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ==================== STORY CIRCLE ====================
 class StoryCircle extends StatelessWidget {
   final String name;
   final bool isYourStory;
@@ -141,7 +136,6 @@ class StoryCircle extends StatelessWidget {
   }
 }
 
-// ==================== POST CARD ====================
 class PostCard extends StatelessWidget {
   final int index;
   const PostCard({super.key, required this.index});
@@ -197,7 +191,6 @@ class PostCard extends StatelessWidget {
   }
 }
 
-// ==================== REELS SCREEN ====================
 class ReelsScreen extends StatelessWidget {
   const ReelsScreen({super.key});
 
@@ -257,7 +250,6 @@ class ReelsScreen extends StatelessWidget {
   }
 }
 
-// ==================== PROFILE SCREEN ====================
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -297,7 +289,6 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            // Grid of posts
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -311,7 +302,9 @@ class ProfileScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 return Container(
                   color: Colors.orange.shade100,
-                  child: const Center(child: Text('🐱', style: TextStyle(fontSize: 30))),
+                  child: const Center(
+                    child: Text('🐱', style: TextStyle(fontSize: 30)),
+                  ),
                 );
               },
             ),
@@ -325,13 +318,20 @@ class ProfileScreen extends StatelessWidget {
 class _Stat extends StatelessWidget {
   final String title;
   final String value;
-  const _Stat({required this.title, required this.value});
+
+  const _Stat({
+    required this.title,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         Text(title),
       ],
     );
