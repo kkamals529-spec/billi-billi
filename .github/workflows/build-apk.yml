@@ -26,16 +26,54 @@ jobs:
           cp main.dart billi_billi_build/lib/main.dart
           cp pubspec.yaml billi_billi_build/pubspec.yaml
 
-      - name: Fix Kotlin version
+      - name: Configure Android Kotlin
         working-directory: billi_billi_build
         run: |
-          if [ -f android/settings.gradle ]; then
-            sed -i -E 's/(id "org\.jetbrains\.kotlin\.android" version ")[^"]+/\12.1.0/' android/settings.gradle
-          fi
+          python3 - <<'PY'
+          from pathlib import Path
 
-          if [ -f android/settings.gradle.kts ]; then
-            sed -i -E 's/(id\("org\.jetbrains\.kotlin\.android"\) version ")[^"]+/\12.1.0/' android/settings.gradle.kts
-          fi
+          p = Path("android/settings.gradle")
+
+          if p.exists():
+              text = p.read_text()
+
+              old = 'id "org.jetbrains.kotlin.android" version "1.9.0" apply false'
+              new = 'id "org.jetbrains.kotlin.android" version "2.1.0" apply false'
+
+              if old in text:
+                  text = text.replace(old, new)
+
+              if 'id "org.jetbrains.kotlin.android"' not in text:
+                  text = text.replace(
+                      'plugins {',
+                      'plugins {\n'
+                      '    id "org.jetbrains.kotlin.android" version "2.1.0" apply false',
+                      1
+                  )
+
+              p.write_text(text)
+
+          p = Path("android/settings.gradle.kts")
+
+          if p.exists():
+              text = p.read_text()
+
+              old = 'id("org.jetbrains.kotlin.android") version "1.9.0" apply false'
+              new = 'id("org.jetbrains.kotlin.android") version "2.1.0" apply false'
+
+              if old in text:
+                  text = text.replace(old, new)
+
+              if 'id("org.jetbrains.kotlin.android")' not in text:
+                  text = text.replace(
+                      'plugins {',
+                      'plugins {\n'
+                      '    id("org.jetbrains.kotlin.android") version "2.1.0" apply false',
+                      1
+                  )
+
+              p.write_text(text)
+          PY
 
       - name: Get dependencies
         working-directory: billi_billi_build
