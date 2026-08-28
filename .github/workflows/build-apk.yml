@@ -32,26 +32,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          p = Path("android/settings.gradle")
-
-          if p.exists():
-              text = p.read_text()
-
-              old = 'id "org.jetbrains.kotlin.android" version "1.9.0" apply false'
-              new = 'id "org.jetbrains.kotlin.android" version "2.1.0" apply false'
-
-              if old in text:
-                  text = text.replace(old, new)
-
-              if 'id "org.jetbrains.kotlin.android"' not in text:
-                  text = text.replace(
-                      'plugins {',
-                      'plugins {\n'
-                      '    id "org.jetbrains.kotlin.android" version "2.1.0" apply false',
-                      1
-                  )
-
-              p.write_text(text)
 
           p = Path("android/settings.gradle.kts")
 
