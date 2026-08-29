@@ -14,52 +14,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Save app files
+        run: |
+          cp lib/main.dart /tmp/main.dart
+          cp pubspec.yaml /tmp/pubspec.yaml
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.0'
           channel: stable
+          cache: true
 
-      - name: Create Flutter project
+      - name: Create Flutter Android project
         run: |
-          flutter create --platforms=android billi_billi_build
-          cp main.dart billi_billi_build/lib/main.dart
-          cp pubspec.yaml billi_billi_build/pubspec.yaml
-
-      - name: Fix Kotlin JVM target
-        working-directory: billi_billi_build
-        run: |
-          python3 - <<'PY'
-          p = "android/app/build.gradle.kts"
-          s = open(p).read()
-
-          if "import org.jetbrains.kotlin.gradle.dsl.JvmTarget" not in s:
-              s = "import org.jetbrains.kotlin.gradle.dsl.JvmTarget\n" + s
-
-          s = s.replace(
-              "kotlinOptions {",
-              "compilerOptions {"
-          )
-
-          s = s.replace(
-              "jvmTarget = JavaVersion.VERSION_11.toString()",
-              "jvmTarget.set(JvmTarget.JVM_17)"
-          )
-
-          s = s.replace(
-              "jvmTarget = JavaVersion.VERSION_17.toString()",
-              "jvmTarget.set(JvmTarget.JVM_17)"
-          )
-
-          open(p, "w").write(s)
-          PY
+          flutter create --platforms=android --org com.billibilli .
+          cp /tmp/main.dart lib/main.dart
+          cp /tmp/pubspec.yaml pubspec.yaml
 
       - name: Get dependencies
-        working-directory: billi_billi_build
         run: flutter pub get
 
       - name: Build APK
-        working-directory: billi_billi_build
         run: flutter build apk --release
 
       - name: Upload APK
