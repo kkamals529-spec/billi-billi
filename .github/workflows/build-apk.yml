@@ -29,7 +29,30 @@ jobs:
       - name: Fix Kotlin JVM target
         working-directory: billi_billi_build
         run: |
-          sed -i 's/jvmTarget = JavaVersion.VERSION_11.toString()/jvmTarget = "17"/' android/app/build.gradle.kts  
+          python3 - <<'PY'
+          p = "android/app/build.gradle.kts"
+          s = open(p).read()
+
+          if "import org.jetbrains.kotlin.gradle.dsl.JvmTarget" not in s:
+              s = "import org.jetbrains.kotlin.gradle.dsl.JvmTarget\n" + s
+
+          s = s.replace(
+              "kotlinOptions {",
+              "compilerOptions {"
+          )
+
+          s = s.replace(
+              "jvmTarget = JavaVersion.VERSION_11.toString()",
+              "jvmTarget.set(JvmTarget.JVM_17)"
+          )
+
+          s = s.replace(
+              "jvmTarget = JavaVersion.VERSION_17.toString()",
+              "jvmTarget.set(JvmTarget.JVM_17)"
+          )
+
+          open(p, "w").write(s)
+          PY
 
       - name: Get dependencies
         working-directory: billi_billi_build
