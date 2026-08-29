@@ -644,9 +644,8 @@ class ShortsScreen extends StatelessWidget {
             itemCount: videos.length,
             itemBuilder: (context, index) {
               return ShortVideoPage(
-                key: ValueKey(
-                  'short-${videos[index].path}',
-                ),
+                key: ValueKey('short-$
+              {videos[index].path}'),
                 video: videos[index],
               );
             },
