@@ -28,22 +28,26 @@ jobs:
 
       - name: Create Flutter Android project
         run: |
-          flutter create --platforms=android --org com.billibilli .
-          cp /tmp/main.dart lib/main.dart
-          cp /tmp/pubspec.yaml pubspec.yaml
+          flutter create --platforms=android --org com.billibilli billi_billi_build
+          cp /tmp/main.dart billi_billi_build/lib/main.dart
+          cp /tmp/pubspec.yaml billi_billi_build/pubspec.yaml
 
       - name: Fix Kotlin version
         run: |
-          sed -i 's/org.jetbrains.kotlin.android" version "[^"]*"/org.jetbrains.kotlin.android" version "2.3.0"/' android/settings.gradle
+          sed -i 's/org.jetbrains.kotlin.android" version "[^"]*"/org.jetbrains.kotlin.android" version "2.3.0"/' billi_billi_build/android/settings.gradle
 
       - name: Get dependencies
-        run: flutter pub get
+        run: |
+          cd billi_billi_build
+          flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: |
+          cd billi_billi_build
+          flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Billi-Billi-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: billi_billi_build/build/app/outputs/flutter-apk/app-release.apk
