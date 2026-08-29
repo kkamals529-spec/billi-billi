@@ -26,7 +26,10 @@ jobs:
           cp main.dart billi_billi_build/lib/main.dart
           cp pubspec.yaml billi_billi_build/pubspec.yaml
 
-  
+      - name: Fix Kotlin JVM target
+        working-directory: billi_billi_build
+        run: |
+          sed -i 's/jvmTarget = JavaVersion.VERSION_11.toString()/jvmTarget = "17"/' android/app/build.gradle.kts  
 
       - name: Get dependencies
         working-directory: billi_billi_build
