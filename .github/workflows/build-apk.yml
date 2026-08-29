@@ -14,11 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Save app files
-        run: |
-          cp lib/main.dart /tmp/main.dart
-          cp pubspec.yaml /tmp/pubspec.yaml
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -28,13 +23,9 @@ jobs:
 
       - name: Create Flutter Android project
         run: |
-          flutter create --platforms=android --org com.billibilli billi_billi_build
-          cp /tmp/main.dart billi_billi_build/lib/main.dart
-          cp /tmp/pubspec.yaml billi_billi_build/pubspec.yaml
-
-      - name: Fix Kotlin version
-        run: |
-          sed -i 's/org.jetbrains.kotlin.android" version "[^"]*"/org.jetbrains.kotlin.android" version "2.3.0"/' billi_billi_build/android/settings.gradle
+          flutter create --platforms=android --org com.billibilli --project-name billi_billi billi_billi_build
+          cp main.dart billi_billi_build/lib/main.dart
+          cp pubspec.yaml billi_billi_build/pubspec.yaml
 
       - name: Get dependencies
         run: |
