@@ -6,6 +6,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,6 +17,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -21,54 +30,84 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Flutter project
+      - name: Create Android platform
         run: |
-          flutter create --platforms=android billi_billi_build
-          cp main.dart billi_billi_build/lib/main.dart
-          cp pubspec.yaml billi_billi_build/pubspec.yaml
+          flutter create \
+            --platforms=android \
+            --project-name billi_billi \
+            --org com.billibilli \
+            .
 
-      - name: Fix Kotlin JVM target
-        working-directory: billi_billi_build
+      - name: Configure Android package and permissions
+        shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
-          p = Path("android/app/build.gradle.kts")
-          text = p.read_text(encoding="utf-8")
+          old_package = "com.billibilli.billi_billi"
+          new_package = "com.billibilli.video"
 
-          # Remove old kotlinOptions block
-          text = re.sub(
-              r'\n\s*kotlinOptions\s*\{\s*jvmTarget\s*=\s*JavaVersion\.VERSION_\d+\.toString\(\)\s*\}',
-              '',
-              text,
-              count=1
+          for p in Path("android").rglob("*"):
+              if not p.is_file():
+                  continue
+
+              try:
+                  text = p.read_text(encoding="utf-8")
+              except (UnicodeDecodeError, OSError):
+                  continue
+
+              if old_package in text:
+                  p.write_text(
+                      text.replace(old_package, new_package),
+                      encoding="utf-8"
+                  )
+
+          manifest = Path(
+              "android/app/src/main/AndroidManifest.xml"
           )
 
-          # Add the modern Kotlin compilerOptions block
-          if "compilerOptions" not in text:
-              text += """
+          text = manifest.read_text(encoding="utf-8")
 
-          kotlin {
-              compilerOptions {
-                  jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-              }
-          }
-          """
+          manifest_start = (
+              '<manifest '
+              'xmlns:android="http://schemas.android.com/apk/res/android">'
+          )
 
-          p.write_text(text, encoding="utf-8")
+          if manifest_start not in text:
+              raise SystemExit(
+                  "AndroidManifest.xml manifest tag not found"
+              )
+
+          permissions = [
+              '<uses-permission '
+              'android:name="android.permission.CAMERA" />',
+              '<uses-permission '
+              'android:name="android.permission.INTERNET" />',
+          ]
+
+          for permission in permissions:
+              if permission not in text:
+                  text = text.replace(
+                      manifest_start,
+                      manifest_start + "\n    " + permission,
+                      1
+                  )
+
+          manifest.write_text(text, encoding="utf-8")
           PY
 
       - name: Get dependencies
-        working-directory: billi_billi_build
         run: flutter pub get
 
-      - name: Build APK
-        working-directory: billi_billi_build
+      - name: Analyze Dart code
+        run: flutter analyze --no-fatal-infos
+
+      - name: Build release APK
         run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Billi-Billi-APK
-          path: billi_billi_build/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
