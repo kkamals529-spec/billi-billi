@@ -21,11 +21,18 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Flutter Android project
+      - name: Create Flutter Android Project
         run: |
-          flutter create --platforms=android --org com.billibilli --project-name billi_billi billi_billi_build
+          flutter create --platforms=android --org com.billibilli billi_billi_build
           cp main.dart billi_billi_build/lib/main.dart
           cp pubspec.yaml billi_billi_build/pubspec.yaml
+
+      - name: Set Kotlin version
+        run: |
+          cd billi_billi_build
+          sed -i "s/2.1.0/2.3.20/g" android/settings.gradle
+          sed -i "s/2.1.0/2.3.20/g" android/build.gradle
+          sed -i "s/2.1.0/2.3.20/g" android/gradle.properties
 
       - name: Get dependencies
         run: |
